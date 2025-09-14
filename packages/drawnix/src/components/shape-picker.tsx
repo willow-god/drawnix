@@ -11,11 +11,12 @@ import {
   RoundRectangleIcon,
   TerminalIcon,
 } from './icons';
-import { BoardTransforms } from '@plait/core';
+import { BoardTransforms , PlaitBoard } from '@plait/core';
 import React from 'react';
 import { BoardCreationMode, setCreationMode } from '@plait/common';
 import { BasicShapes, DrawPointerType, FlowchartSymbols } from '@plait/draw';
 import { useBoard } from '@plait-board/react-board';
+import { Translations, useI18n } from '../i18n';
 import { splitRows } from '../utils/common';
 
 export interface ShapeProps {
@@ -27,37 +28,37 @@ export interface ShapeProps {
 const SHAPES: ShapeProps[] = [
   {
     icon: RectangleIcon,
-    title: 'Rectangle',
+    title: 'toolbar.shape.rectangle',
     pointer: BasicShapes.rectangle,
   },
   {
     icon: EllipseIcon,
-    title: 'Ellipse',
+    title: 'toolbar.shape.ellipse',
     pointer: BasicShapes.ellipse,
   },
   {
     icon: TriangleIcon,
-    title: 'Triangle',
+    title: 'toolbar.shape.triangle',
     pointer: BasicShapes.triangle,
   },
   {
     icon: TerminalIcon,
-    title: 'Terminal',
+    title: 'toolbar.shape.terminal',
     pointer: FlowchartSymbols.terminal,
   },
   {
     icon: DiamondIcon,
-    title: 'Diamond',
+    title: 'toolbar.shape.diamond',
     pointer: BasicShapes.diamond,
   },
   {
     icon: ParallelogramIcon,
-    title: 'Parallelogram',
+    title: 'toolbar.shape.parallelogram',
     pointer: BasicShapes.parallelogram,
   },
   {
     icon: RoundRectangleIcon,
-    title: 'RoundRectangle',
+    title: 'toolbar.shape.roundRectangle',
     pointer: BasicShapes.roundRectangle,
   },
 ];
@@ -72,6 +73,7 @@ export const ShapePicker: React.FC<ShapePickerProps> = ({
   onPointerUp,
 }) => {
   const board = useBoard();
+  const { t } = useI18n();
   return (
     <Island padding={1}>
       <Stack.Col gap={1}>
@@ -86,9 +88,10 @@ export const ShapePicker: React.FC<ShapePickerProps> = ({
                     type="icon"
                     size={'small'}
                     visible={true}
+                    selected={PlaitBoard.isPointer(board, shape.pointer)}
                     icon={shape.icon}
-                    title={shape.title}
-                    aria-label={shape.title}
+                    title={t((shape.title || 'toolbar.shape') as keyof Translations)}
+                    aria-label={t((shape.title || 'toolbar.shape') as keyof Translations)}
                     onPointerDown={() => {
                       setCreationMode(board, BoardCreationMode.dnd);
                       BoardTransforms.updatePointerType(board, shape.pointer);

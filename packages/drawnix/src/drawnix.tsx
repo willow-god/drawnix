@@ -10,7 +10,7 @@ import {
   ThemeColorMode,
   Viewport,
 } from '@plait/core';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { withGroup } from '@plait/common';
 import { withDraw } from '@plait/draw';
 import { MindThemeColors, withMind } from '@plait/mind';
@@ -37,6 +37,9 @@ import { TTDDialog } from './components/ttd-dialog/ttd-dialog';
 import { CleanConfirm } from './components/clean-confirm/clean-confirm';
 import { buildTextLinkPlugin } from './plugins/with-text-link';
 import { LinkPopup } from './components/popup/link-popup/link-popup';
+import { I18nProvider } from './i18n';
+import { Tutorial } from './components/tutorial';
+import { LASER_POINTER_CLASS_NAME } from './utils/laser-pointer';
 
 export type DrawnixProps = {
   value: PlaitElement[];
@@ -48,6 +51,7 @@ export type DrawnixProps = {
   onViewportChange?: (value: Viewport) => void;
   onThemeChange?: (value: ThemeColorMode) => void;
   afterInit?: (board: PlaitBoard) => void;
+  tutorial?: boolean;
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export const Drawnix: React.FC<DrawnixProps> = ({
@@ -60,6 +64,7 @@ export const Drawnix: React.FC<DrawnixProps> = ({
   onThemeChange,
   onValueChange,
   afterInit,
+  tutorial = false,
 }) => {
   const options: PlaitBoardOptions = {
     readonly: false,
@@ -108,44 +113,53 @@ export const Drawnix: React.FC<DrawnixProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <DrawnixContext.Provider value={{ appState, setAppState }}>
-      <div
-        className={classNames('drawnix', {
-          'drawnix--mobile': appState.isMobile,
-        })}
-        ref={containerRef}
-      >
-        <Wrapper
-          value={value}
-          viewport={viewport}
-          theme={theme}
-          options={options}
-          plugins={plugins}
-          onChange={(data: BoardChangeData) => {
-            onChange && onChange(data);
-          }}
-          onSelectionChange={onSelectionChange}
-          onViewportChange={onViewportChange}
-          onThemeChange={onThemeChange}
-          onValueChange={onValueChange}
+    <I18nProvider>
+      <DrawnixContext.Provider value={{ appState, setAppState }}>
+        <div
+          className={classNames('drawnix', {
+            'drawnix--mobile': appState.isMobile,
+          })}
+          ref={containerRef}
         >
-          <Board
-            afterInit={(board) => {
-              setBoard(board as DrawnixBoard);
-              afterInit && afterInit(board);
+          <Wrapper
+            value={value}
+            viewport={viewport}
+            theme={theme}
+            options={options}
+            plugins={plugins}
+            onChange={(data: BoardChangeData) => {
+              onChange && onChange(data);
             }}
-          ></Board>
-          <AppToolbar></AppToolbar>
-          <CreationToolbar></CreationToolbar>
-          <ZoomToolbar></ZoomToolbar>
-          <ThemeToolbar></ThemeToolbar>
-          <PopupToolbar></PopupToolbar>
-          <LinkPopup></LinkPopup>
-          <ClosePencilToolbar></ClosePencilToolbar>
-          <TTDDialog container={containerRef.current}></TTDDialog>
-          <CleanConfirm container={containerRef.current}></CleanConfirm>
-        </Wrapper>
-      </div>
-    </DrawnixContext.Provider>
+            onSelectionChange={onSelectionChange}
+            onViewportChange={onViewportChange}
+            onThemeChange={onThemeChange}
+            onValueChange={onValueChange}
+          >
+            <Board
+              afterInit={(board) => {
+                setBoard(board as DrawnixBoard);
+                afterInit && afterInit(board);
+              }}
+            >
+              {tutorial &&
+                board &&
+                PlaitBoard.isPointer(board, PlaitPointerType.selection) && (
+                  <Tutorial />
+                )}
+            </Board>
+            <AppToolbar></AppToolbar>
+            <CreationToolbar></CreationToolbar>
+            <ZoomToolbar></ZoomToolbar>
+            <ThemeToolbar></ThemeToolbar>
+            <PopupToolbar></PopupToolbar>
+            <LinkPopup></LinkPopup>
+            <ClosePencilToolbar></ClosePencilToolbar>
+            <TTDDialog container={containerRef.current}></TTDDialog>
+            <CleanConfirm container={containerRef.current}></CleanConfirm>
+          </Wrapper>
+          <canvas className={`${LASER_POINTER_CLASS_NAME} mouse-course-hidden`}></canvas>
+        </div>
+      </DrawnixContext.Provider>
+    </I18nProvider>
   );
 };

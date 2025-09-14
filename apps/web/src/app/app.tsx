@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { initializeData } from './initialize-data';
 import { Drawnix } from '@drawnix/drawnix';
 import { PlaitBoard, PlaitElement, PlaitTheme, Viewport } from '@plait/core';
 import localforage from 'localforage';
 
-// 1个月后移出删除兼容
-const OLD_DRAWNIX_LOCAL_DATA_KEY = 'drawnix-local-data';
+type AppValue = {
+  children: PlaitElement[];
+  viewport?: Viewport;
+  theme?: PlaitTheme;
+};
+
 const MAIN_BOARD_CONTENT_KEY = 'main_board_content';
 
 localforage.config({
@@ -15,30 +18,24 @@ localforage.config({
 });
 
 export function App() {
-  const [value, setValue] = useState<{
-    children: PlaitElement[];
-    viewport?: Viewport;
-    theme?: PlaitTheme;
-  }>({ children: [] });
+  const [value, setValue] = useState<AppValue>({ children: [] });
+
+  const [tutorial, setTutorial] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
-      const storedData = await localforage.getItem(MAIN_BOARD_CONTENT_KEY);
+      const storedData = (await localforage.getItem(
+        MAIN_BOARD_CONTENT_KEY
+      )) as AppValue;
       if (storedData) {
-        setValue(storedData as any);
+        setValue(storedData);
+        if (storedData.children && storedData.children.length === 0) {
+          setTutorial(true);
+        }
         return;
       }
-      const localData = localStorage.getItem(OLD_DRAWNIX_LOCAL_DATA_KEY);
-      if (localData) {
-        const parsedData = JSON.parse(localData);
-        setValue(parsedData);
-        await localforage.setItem(MAIN_BOARD_CONTENT_KEY, parsedData);
-        localStorage.removeItem(OLD_DRAWNIX_LOCAL_DATA_KEY);
-        return;
-      }
-      setValue({ children: initializeData });
+      setTutorial(true);
     };
-
     loadData();
   }, []);
   return (
@@ -47,16 +44,24 @@ export function App() {
       viewport={value.viewport}
       theme={value.theme}
       onChange={(value) => {
-        localforage.setItem(MAIN_BOARD_CONTENT_KEY, value);
+        const newValue = value as AppValue;
+        localforage.setItem(MAIN_BOARD_CONTENT_KEY, newValue);
+        setValue(newValue);
+        if (newValue.children && newValue.children.length > 0) {
+          setTutorial(false);
+        }
       }}
+      tutorial={tutorial}
       afterInit={(board) => {
         console.log('board initialized');
+        /*
         console.log(
           `add __drawnix__web__debug_log to window, so you can call add log anywhere, like: window.__drawnix__web__console('some thing')`
         );
         (window as any)['__drawnix__web__console'] = (value: string) => {
           addDebugLog(board, value);
         };
+        */
       }}
     ></Drawnix>
   );

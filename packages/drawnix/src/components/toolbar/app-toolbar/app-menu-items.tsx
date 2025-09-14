@@ -19,13 +19,16 @@ import MenuItem from '../../menu/menu-item';
 import MenuItemLink from '../../menu/menu-item-link';
 import { saveAsImage } from '../../../utils/image';
 import { useDrawnix } from '../../../hooks/use-drawnix';
+import { useI18n } from '../../../i18n';
 import Menu from '../../menu/menu';
 import { useContext } from 'react';
 import { MenuContentPropsContext } from '../../menu/common';
 import { EVENT } from '../../../constants';
+import { getShortcutKey } from '../../../utils/common';
 
 export const SaveToFile = () => {
   const board = useBoard();
+  const { t } = useI18n();
   return (
     <MenuItem
       data-testid="save-button"
@@ -33,9 +36,9 @@ export const SaveToFile = () => {
         saveAsJSON(board);
       }}
       icon={SaveFileIcon}
-      aria-label={`${`保存文件`}`}
-      shortcut={`Cmd+S`}
-    >{`保存文件`}</MenuItem>
+      aria-label={t('menu.saveFile')}
+      shortcut={getShortcutKey('CtrlOrCmd+S')}
+    >{t('menu.saveFile')}</MenuItem>
   );
 };
 SaveToFile.displayName = 'SaveToFile';
@@ -43,6 +46,7 @@ SaveToFile.displayName = 'SaveToFile';
 export const OpenFile = () => {
   const board = useBoard();
   const listRender = useListRender();
+  const { t } = useI18n();
   const clearAndLoad = (
     value: PlaitElement[],
     viewport?: Viewport,
@@ -67,8 +71,8 @@ export const OpenFile = () => {
         });
       }}
       icon={OpenFileIcon}
-      aria-label={`${`打开`}`}
-    >{`打开`}</MenuItem>
+      aria-label={t('menu.open')}
+    >{t('menu.open')}</MenuItem>
   );
 };
 OpenFile.displayName = 'OpenFile';
@@ -76,6 +80,7 @@ OpenFile.displayName = 'OpenFile';
 export const SaveAsImage = () => {
   const board = useBoard();
   const menuContentProps = useContext(MenuContentPropsContext);
+  const { t } = useI18n();
   return (
     <MenuItem
       icon={ExportImageIcon}
@@ -95,24 +100,24 @@ export const SaveAsImage = () => {
             onSelect={() => {
               saveAsImage(board, true);
             }}
-            aria-label={'透明背景'}
+            aria-label={t('menu.exportImage.png')}
           >
-            PNG
+            {t('menu.exportImage.png')}
           </MenuItem>
           <MenuItem
             onSelect={() => {
               saveAsImage(board, false);
             }}
-            aria-label={'白色背景'}
+            aria-label={t('menu.exportImage.jpg')}
           >
-            JPG
+            {t('menu.exportImage.jpg')}
           </MenuItem>
         </Menu>
       }
-      shortcut={`Cmd+Shift+E`}
-      aria-label={''}
+      shortcut={getShortcutKey('CtrlOrCmd+Shift+E')}
+      aria-label={t('menu.exportImage')}
     >
-      {'导出图片'}
+      {t('menu.exportImage')}
     </MenuItem>
   );
 };
@@ -120,6 +125,7 @@ SaveAsImage.displayName = 'SaveAsImage';
 
 export const CleanBoard = () => {
   const { appState, setAppState } = useDrawnix();
+  const { t } = useI18n();
   return (
     <MenuItem
       icon={TrashIcon}
@@ -130,10 +136,10 @@ export const CleanBoard = () => {
           openCleanConfirm: true,
         });
       }}
-      shortcut={`Cmd+Backspace`}
-      aria-label={'清除画布'}
+      shortcut={getShortcutKey('CtrlOrCmd+Backspace')}
+      aria-label={t('menu.cleanBoard')}
     >
-      {'清除画布'}
+      {t('menu.cleanBoard')}
     </MenuItem>
   );
 };

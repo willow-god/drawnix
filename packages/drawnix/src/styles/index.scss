@@ -128,4 +128,35 @@
     .drawnix-button {
         @include outlineButtonStyles;
     }
+
+    [plait-mindmap="true"] {
+        img.image-origin--focus:hover {
+            cursor: zoom-in;
+        }
+    }
+
+    .laser-pointer {
+        background: transparent;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 2022;
+        width: 100vw;
+        height: 100vh;
+        &.mouse-course-hidden {
+            pointer-events: none;
+        }
+    }
 }
+
+.plait-board-container {
+    &.pointer-eraser {
+        .board-host-svg {
+            cursor: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4=') 10 10, crosshair !important;
+        } 
+    }
+    .slate-editable-container {
+        cursor: inherit !important;
+    }
+}
+

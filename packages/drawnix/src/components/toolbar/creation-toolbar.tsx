@@ -8,6 +8,7 @@ import {
   SelectionIcon,
   ShapeIcon,
   TextIcon,
+  EraseIcon,
   StraightArrowLineIcon,
   FeltTipPenIcon,
   ImageIcon,
@@ -28,6 +29,7 @@ import {
   DrawPointerType,
   FlowchartSymbols,
 } from '@plait/draw';
+import { FreehandPanel , FREEHANDS } from './freehand-panel/freehand-panel';
 import { ShapePicker } from '../shape-picker';
 import { ArrowPicker } from '../arrow-picker';
 import { useState } from 'react';
@@ -38,18 +40,18 @@ import {
   useDrawnix,
   useSetPointer,
 } from '../../hooks/use-drawnix';
-import { fileOpen } from '../../data/filesystem';
-import { IMAGE_MIME_TYPES } from '../../constants';
-import { insertImage } from '../../data/image';
 import { ExtraToolsButton } from './extra-tools/extra-tools-button';
+import { addImage } from '../../utils/image';
+import { useI18n } from '../../i18n';
 
 export enum PopupKey {
   'shape' = 'shape',
   'arrow' = 'arrow',
+  'freehand' = 'freehand',
 }
 
 type AppToolButtonProps = {
-  title?: string;
+  titleKey?: keyof typeof import('../../i18n').Translations;
   name?: string;
   icon: React.ReactNode;
   pointer?: DrawnixPointerType;
@@ -66,48 +68,49 @@ export const BUTTONS: AppToolButtonProps[] = [
   {
     icon: HandIcon,
     pointer: PlaitPointerType.hand,
-    title: 'Hand',
+    titleKey: 'toolbar.hand',
   },
   {
     icon: SelectionIcon,
     pointer: PlaitPointerType.selection,
-    title: 'Selection',
+    titleKey: 'toolbar.selection',
   },
   {
     icon: MindIcon,
     pointer: MindPointerType.mind,
-    title: 'Mind',
+    titleKey: 'toolbar.mind',
   },
   {
     icon: TextIcon,
     pointer: BasicShapes.text,
-    title: 'Text',
+    titleKey: 'toolbar.text',
   },
   {
     icon: FeltTipPenIcon,
     pointer: FreehandShape.feltTipPen,
-    title: 'Freehand',
+    titleKey: 'toolbar.pen',
+    key: PopupKey.freehand,
   },
   {
     icon: StraightArrowLineIcon,
-    title: 'Arrow Line',
+    titleKey: 'toolbar.arrow',
     key: PopupKey.arrow,
     pointer: ArrowLineShape.straight,
   },
   {
     icon: ShapeIcon,
-    title: 'Shape',
+    titleKey: 'toolbar.shape',
     key: PopupKey.shape,
     pointer: BasicShapes.rectangle,
   },
   {
     icon: ImageIcon,
-    title: 'Image',
+    titleKey: 'toolbar.image',
     key: 'image',
   },
   {
     icon: ExtraToolsIcon,
-    title: '更多工具',
+    titleKey: 'toolbar.extraTools',
     key: 'extra-tools',
   },
 ];
@@ -127,12 +130,17 @@ export const isShapePointer = (board: PlaitBoard) => {
 export const CreationToolbar = () => {
   const board = useBoard();
   const { appState } = useDrawnix();
+  const { t } = useI18n();
   const setPointer = useSetPointer();
   const container = PlaitBoard.getBoardContainer(board);
 
+  const [freehandOpen, setFreehandOpen] = useState(false);
   const [arrowOpen, setArrowOpen] = useState(false);
-
   const [shapeOpen, setShapeOpen] = useState(false);
+  const [lastFreehandButton, setLastFreehandButton] =
+    useState<AppToolButtonProps>(
+      BUTTONS.find((button) => button.key === PopupKey.freehand)!
+    );
 
   const onPointerDown = (pointer: DrawnixPointerType) => {
     setCreationMode(board, BoardCreationMode.dnd);
@@ -146,21 +154,17 @@ export const CreationToolbar = () => {
 
   const isChecked = (button: AppToolButtonProps) => {
     return (
-      PlaitBoard.isPointer(board, button.pointer) && !arrowOpen && !shapeOpen
+      PlaitBoard.isPointer(board, button.pointer) && !arrowOpen && !shapeOpen && !freehandOpen
     );
   };
 
-  const addImage = async () => {
-    const imageFile = await fileOpen({
-      description: 'Image',
-      extensions: Object.keys(
-        IMAGE_MIME_TYPES
-      ) as (keyof typeof IMAGE_MIME_TYPES)[],
-    });
-    insertImage(board, imageFile);
+  const checkCurrentPointerIsFreehand = (board: PlaitBoard) => {
+    return PlaitBoard.isInPointer(board, [
+      FreehandShape.feltTipPen, 
+      FreehandShape.eraser,
+    ]);
   };
 
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <Island
@@ -171,6 +175,49 @@ export const CreationToolbar = () => {
         {BUTTONS.map((button, index) => {
           if (appState.isMobile && button.pointer === PlaitPointerType.hand) {
             return <></>;
+          }
+          if (button.key === PopupKey.freehand) {
+            return (
+              <Popover
+                key={index}
+                open={freehandOpen || checkCurrentPointerIsFreehand(board)}
+                sideOffset={12}
+                onOpenChange={(open) => {
+                  setFreehandOpen(open);
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <ToolButton
+                    type="icon"
+                    visible={true}
+                    selected={
+                      freehandOpen ||
+                      checkCurrentPointerIsFreehand(board)
+                    }
+                    icon={lastFreehandButton.icon}
+                    title={lastFreehandButton.titleKey ? t(lastFreehandButton.titleKey) : 'Freehand'}
+                    aria-label={lastFreehandButton.titleKey ? t(lastFreehandButton.titleKey) : 'Freehand'}
+                    onPointerDown={() => {
+                      setFreehandOpen(!freehandOpen);
+                      onPointerDown(lastFreehandButton.pointer!);
+                    }}
+                    onPointerUp={() => {
+                      onPointerUp();
+                    }}
+                  />
+                </PopoverTrigger>
+                <PopoverContent container={container}>
+                  <FreehandPanel
+                    onPointerUp={(pointer: DrawnixPointerType) => {
+                      setPointer(pointer);
+                      setLastFreehandButton(
+                        FREEHANDS.find((button) => button.pointer === pointer)!
+                      );
+                    }}
+                  ></FreehandPanel>
+                </PopoverContent>
+              </Popover>
+            );
           }
           if (button.key === PopupKey.shape) {
             return (
@@ -192,10 +239,15 @@ export const CreationToolbar = () => {
                         !PlaitBoard.isPointer(board, BasicShapes.text))
                     }
                     icon={button.icon}
-                    title={`Shape`}
-                    aria-label={`Shape`}
+                    title={button.titleKey ? t(button.titleKey) : 'Shape'}
+                    aria-label={button.titleKey ? t(button.titleKey) : 'Shape'}
                     onPointerDown={() => {
                       setShapeOpen(!shapeOpen);
+                      if (isShapePointer(board)) {
+                        BoardTransforms.updatePointerType(board, board.pointer);
+                      } else {
+                        BoardTransforms.updatePointerType(board, button.pointer!);
+                      }
                     }}
                   />
                 </PopoverTrigger>
@@ -226,10 +278,15 @@ export const CreationToolbar = () => {
                     visible={true}
                     selected={arrowOpen || isArrowLinePointer(board)}
                     icon={button.icon}
-                    title={`Arrow`}
-                    aria-label={`Arrow`}
+                    title={button.titleKey ? t(button.titleKey) : ''}
+                    aria-label={button.titleKey ? t(button.titleKey) : ''}
                     onPointerDown={() => {
-                      setArrowOpen(!shapeOpen);
+                      setArrowOpen(!arrowOpen);
+                      if (isArrowLinePointer(board)) {
+                        BoardTransforms.updatePointerType(board, board.pointer);
+                      } else {
+                        BoardTransforms.updatePointerType(board, button.pointer!);
+                      }
                     }}
                   />
                 </PopoverTrigger>
@@ -253,8 +310,8 @@ export const CreationToolbar = () => {
               type="radio"
               icon={button.icon}
               checked={isChecked(button)}
-              title={`${button.title}`}
-              aria-label={`${button.title}`}
+              title={button.titleKey ? t(button.titleKey) : ''}
+              aria-label={button.titleKey ? t(button.titleKey) : ''}
               onPointerDown={() => {
                 if (button.pointer && !isBasicPointer(button.pointer)) {
                   onPointerDown(button.pointer);
@@ -268,7 +325,7 @@ export const CreationToolbar = () => {
                   setPointer(button.pointer);
                 }
                 if (button.key === 'image') {
-                  addImage();
+                  addImage(board);
                 }
               }}
             />
